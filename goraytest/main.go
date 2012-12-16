@@ -9,6 +9,7 @@ import "math/rand"
 import "time"
 
 func vecToNRGBA(v goray.Vector) color.NRGBA {
+	v = goray.VecMin(v, goray.Vector{1,1,1})
 	return color.NRGBA {
 		uint8(v.X * 255.0),
 		uint8(v.Y * 255.0),
@@ -45,7 +46,7 @@ func main() {
 		1.0,
 	}
 
-	light := goray.Vector{-3.0, 1.0, 1.0}
+	light := goray.Vector{-1.0, 1.0, 1.0}
 
 	// 640 * 480 image
 	view := goray.View {cam, 640, 480}
@@ -63,12 +64,15 @@ func main() {
 			for _, surface := range surfaces {
 				result := surface.Trace(ray)
 				if result.Hit {
-					distance := goray.Subtract(result.Intersection, cam.Position).Length()
+					surfaceToCamera := goray.Subtract(cam.Position, result.Intersection)
+					distance := surfaceToCamera.Length()
 					iAmClosest := (mindist == -1.0) || distance < mindist
 					if iAmClosest {
 						surfaceToLight := goray.Subtract(light, result.Intersection).Normalized()
+						surfaceToCamera = surfaceToCamera.Normalized()
 						diffuse := goray.LambertDiffuse(surfaceToLight, result.Normal)
-						shaded := result.Color.Scale(diffuse)
+						specular := goray.Specular(surfaceToLight, result.Normal, surfaceToCamera, 8)
+						shaded := goray.Add(result.Color.Scale(diffuse), white.Scale(specular))
 						img.Set(x, y, vecToNRGBA(shaded))
 						mindist = distance
 					}

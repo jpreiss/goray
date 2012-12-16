@@ -65,3 +65,11 @@ func RandomVectorUniform(mins, maxes Vector) Vector {
 		mins.Z + rand.Float64() * delta.Z,
 	}
 }
+
+func VecMin(a, b Vector) Vector {
+	return Vector{Min(a.X, b.X), Min(a.Y, b.Y), Min(a.Z, b.Z)}
+}
+
+func VecMax(a, b Vector) Vector {
+	return Vector{Max(a.X, b.X), Max(a.Y, b.Y), Max(a.Z, b.Z)}
+}
