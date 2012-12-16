@@ -73,3 +73,7 @@ func VecMin(a, b Vector) Vector {
 func VecMax(a, b Vector) Vector {
 	return Vector{Max(a.X, b.X), Max(a.Y, b.Y), Max(a.Z, b.Z)}
 }
+
+func (a Vector) ElementScale (b Vector) Vector {
+	return Vector{a.X * b.X, a.Y * b.Y, a.Z * b.Z}
+}

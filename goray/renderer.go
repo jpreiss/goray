@@ -20,6 +20,9 @@ func Render(surfaces []Surface, camera Camera, width, height int) image.Image {
 	light := Vector{-1.0, 1.0, 1.0}
 	lightColor := Vector{1.0, 1.0, 1.0}
 
+	shadowColorScale := Vector{0.6, 0.7, 1.0}
+	ambientAmount := 0.4
+
 	view := View {camera, width, height}
 	bounds := image.Rect(0, 0, width, height)
 	img := image.NewNRGBA64(bounds)
@@ -45,9 +48,10 @@ func Render(surfaces []Surface, camera Camera, width, height int) image.Image {
 					if iAmClosest {
 						surfaceToLight := Subtract(light, result.Intersection).Normalized()
 						surfaceToCamera = surfaceToCamera.Normalized()
-						diffuse := LambertDiffuse(surfaceToLight, result.Normal)
-						specular := Specular(surfaceToLight, result.Normal, surfaceToCamera, 8)
-						shaded := Add(result.Color.Scale(diffuse), lightColor.Scale(specular))
+						ambient := result.Color.ElementScale(shadowColorScale).Scale(ambientAmount)
+						diffuse := result.Color.Scale(LambertDiffuse(surfaceToLight, result.Normal))
+						specular := lightColor.Scale(Specular(surfaceToLight, result.Normal, surfaceToCamera, 8))
+						shaded := Add(Add(ambient, diffuse), specular)
 						img.Set(x, y, vecToNRGBA(shaded))
 						mindist = distance
 					}
