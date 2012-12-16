@@ -1,3 +1,5 @@
+![ScreenShot](https://raw.github.com/jpreiss/goray/master/rays.png)
+
 goray
 =====
 
