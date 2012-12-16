@@ -32,9 +32,9 @@ func (s Sphere) Trace(r Ray) TraceResult {
 	result := TraceResult{}
 	originToCenter := Subtract(s.Center, r.Origin)
 	rayToCenter := originToCenter.OrthogonalTo(r.Direction)
-	result.Hit = rayToCenter.Length2() < s.RadiusSquared
+	secantMidpoint := Subtract(s.Center, rayToCenter)
+	result.Hit = rayToCenter.Length2() < s.RadiusSquared && Dot(secantMidpoint, r.Direction) > 0
 	if result.Hit {
-		secantMidpoint := Subtract(s.Center, rayToCenter)
 		halfSecantLength := math.Sqrt(rayToCenter.Length2() + s.RadiusSquared)
 		stepBack := r.Direction.Scale(halfSecantLength)
 		result.Intersection = Subtract(secantMidpoint, stepBack)

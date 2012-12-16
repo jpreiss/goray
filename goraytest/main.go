@@ -17,7 +17,7 @@ func vecToNRGBA(v goray.Vector) color.NRGBA {
 
 func main() {
 
-	sphere := goray.NewSphere(goray.Vector{0.0, 0.0, 1.0}, 0.1)
+	sphere := goray.NewSphere(goray.Vector{0.0, 0.0, 1.0}, 0.3)
 
 	cam := goray.Camera {
 		goray.Vector{0, 0, 0},
@@ -27,7 +27,7 @@ func main() {
 		1.0,
 	}
 
-	light := goray.Vector{-1.0, 0.4, 0}
+	light := goray.Vector{-1.0, 1.0, 0.0}
 
 	// 640 * 480 image
 	view := goray.View {cam, 640, 480}
