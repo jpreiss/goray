@@ -30,17 +30,48 @@ func NewSphere(center Vector, radius float64, color Vector) Sphere {
 }
 
 func (s Sphere) Trace(r Ray) TraceResult {
+
 	result := TraceResult{}
-	originToCenter := Subtract(s.Center, r.Origin)
-	rayToCenter := originToCenter.OrthogonalTo(r.Direction)
-	secantMidpoint := Subtract(s.Center, rayToCenter)
-	result.Hit = rayToCenter.Length2() < s.RadiusSquared && Dot(secantMidpoint, r.Direction) > 0
-	if result.Hit {
-		halfSecantLength := math.Sqrt(rayToCenter.Length2() + s.RadiusSquared)
-		stepBack := r.Direction.Scale(halfSecantLength)
-		result.Intersection = Subtract(secantMidpoint, stepBack)
-		result.Normal = Subtract(result.Intersection, s.Center).Normalized()
-		result.Color = s.Color
+	
+	// direction dot direction, but direction is normalized
+	a := 1.0
+	
+	b := 2.0 * (-Dot(s.Center, r.Direction) + Dot(r.Origin, r.Direction))
+
+	c := Dot(s.Center, s.Center) - (2.0 * Dot(s.Center, r.Origin)) + Dot(r.Origin, r.Origin) - s.RadiusSquared;
+
+	discriminant := (b * b) - (4 * a * c)
+
+	if discriminant < 0 {
+		result.Hit = false
+		return result
 	}
+
+	result.Hit = true
+	hitTime := 0.0
+
+	if math.Abs(discriminant) < math.SmallestNonzeroFloat64 {
+		hitTime = -b / (2.0 * a)
+	} else {
+		sqrtDiscriminant := math.Sqrt(discriminant)
+		lowRoot := (-b - sqrtDiscriminant) / (2.0 * a)
+		highRoot := (-b + sqrtDiscriminant) / (2.0 * a)
+		if lowRoot > 0 {
+			hitTime = lowRoot
+		} else {
+			hitTime = highRoot
+		}
+	}
+
+	result.Intersection = Add(r.Origin, r.Direction.Scale(hitTime))
+	result.Normal = Subtract(result.Intersection, s.Center).Normalized()
+	result.Color = s.Color
 	return result
 }
+
+
+
+
+
+		
+
