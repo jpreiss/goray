@@ -5,15 +5,9 @@ type Ray struct {
 	Direction Vector
 }
 
-type RayTest struct {
+type Surface interface {
 	Hit(r Ray) bool
 	Color(r Ray) Vector
-	Intersection(r Ray) Vector
-	Normal(r Ray) Vector
-}
-	
-
-type Surface interface {
 }
 
 type Sphere struct {
