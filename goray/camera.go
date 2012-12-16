@@ -12,14 +12,14 @@ type Camera struct {
 
 type View struct {
 	Camera Camera
-	Width  uint16
-	Height uint16
+	Width  int
+	Height int
 }
 
 // gets the ray corresponding to an image pixel
 // TODO: is totally wrong right now! completely ignores camera orientation!
 // only works when camera is pointing in +Z.
-func (v View) Ray(x int16, y int16) Ray {
+func (v View) Ray(x int, y int) Ray {
 
 	// put our sensor at the distance
 	// such that its width is 2 (-1..1)

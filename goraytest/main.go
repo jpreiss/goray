@@ -1,22 +1,11 @@
 package main
 
 import "goray"
-import "image"
 import "image/png"
-import "image/color"
 import "os"
 import "math/rand"
 import "time"
 
-func vecToNRGBA(v goray.Vector) color.NRGBA {
-	v = goray.VecMin(v, goray.Vector{1,1,1})
-	return color.NRGBA {
-		uint8(v.X * 255.0),
-		uint8(v.Y * 255.0),
-		uint8(v.Z * 255.0),
-		255,
-	}
-}
 
 func main() {
 
@@ -46,40 +35,7 @@ func main() {
 		1.0,
 	}
 
-	light := goray.Vector{-1.0, 1.0, 1.0}
-
-	// 640 * 480 image
-	view := goray.View {cam, 640, 480}
-	bounds := image.Rect(0, 0, 640, 480)
-	img := image.NewNRGBA64(bounds)
-	
-	// render
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-
-			ray := view.Ray(int16(x - 320), int16(-y + 240))
-
-			mindist := -1.0
-
-			for _, surface := range surfaces {
-				result := surface.Trace(ray)
-				if result.Hit {
-					surfaceToCamera := goray.Subtract(cam.Position, result.Intersection)
-					distance := surfaceToCamera.Length()
-					iAmClosest := (mindist == -1.0) || distance < mindist
-					if iAmClosest {
-						surfaceToLight := goray.Subtract(light, result.Intersection).Normalized()
-						surfaceToCamera = surfaceToCamera.Normalized()
-						diffuse := goray.LambertDiffuse(surfaceToLight, result.Normal)
-						specular := goray.Specular(surfaceToLight, result.Normal, surfaceToCamera, 8)
-						shaded := goray.Add(result.Color.Scale(diffuse), white.Scale(specular))
-						img.Set(x, y, vecToNRGBA(shaded))
-						mindist = distance
-					}
-				}
-			}
-		}
-	}
+	img := goray.Render(surfaces, cam, 640, 480)
 
 	imgfile, _ := os.Create("rays.png")
 	defer imgfile.Close()
