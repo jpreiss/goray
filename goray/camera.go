@@ -17,6 +17,8 @@ type View struct {
 }
 
 // gets the ray corresponding to an image pixel
+// TODO: is totally wrong right now! completely ignores camera orientation!
+// only works when camera is pointing in +Z.
 func (v View) Ray(x int16, y int16) Ray {
 
 	// put our sensor at the distance
