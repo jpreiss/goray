@@ -2,6 +2,7 @@ package goray
 
 import "image"
 import "image/color"
+import "math"
 
 
 func vecToNRGBA(v Vector) color.NRGBA {
@@ -14,14 +15,42 @@ func vecToNRGBA(v Vector) color.NRGBA {
 	}
 }
 
-func Render(surfaces []Surface, camera Camera, width, height int) image.Image {
+func RayTrace(surfaces []Surface, ray Ray) (bool, Vector) {
 
-	// TODO: full lighting control
+	// TODO: full lighting control.  this really should not be here!
 	light := Vector{-1.0, 1.0, 1.0}
 	lightColor := Vector{1.0, 1.0, 1.0}
 
 	shadowColorScale := Vector{0.6, 0.7, 1.0}
 	ambientAmount := 0.4
+
+	hit := false
+	mindist := math.MaxFloat32
+	color := Vector{}
+
+	for _, surface := range surfaces {
+		result := surface.Trace(ray)
+		if result.Hit {
+			hit = true
+			surfaceToOrigin := Subtract(ray.Origin, result.Intersection)
+			distance := surfaceToOrigin.Length()
+			if distance < mindist {
+				mindist = distance
+				surfaceToLight := Subtract(light, result.Intersection).Normalized()
+				surfaceToOrigin = surfaceToOrigin.Normalized()
+				ambient := result.Color.ElementScale(shadowColorScale).Scale(ambientAmount)
+				diffuse := result.Color.Scale(LambertDiffuse(surfaceToLight, result.Normal))
+				specular := lightColor.Scale(Specular(surfaceToLight, result.Normal, surfaceToOrigin, 8))
+				color = Add(Add(ambient, diffuse), specular)
+			}
+		}
+	}
+
+	return hit, color
+}
+
+
+func Render(surfaces []Surface, camera Camera, width, height int) image.Image {
 
 	view := View {camera, width, height}
 	bounds := image.Rect(0, 0, width, height)
@@ -37,25 +66,10 @@ func Render(surfaces []Surface, camera Camera, width, height int) image.Image {
 			// compensate for image y direction
 			ray := view.Ray(x - halfwidth, -y + halfheight)
 
-			mindist := -1.0
+			hit, color := RayTrace(surfaces, ray)
 
-			for _, surface := range surfaces {
-				result := surface.Trace(ray)
-				if result.Hit {
-					surfaceToCamera := Subtract(camera.Position, result.Intersection)
-					distance := surfaceToCamera.Length()
-					iAmClosest := (mindist == -1.0) || distance < mindist
-					if iAmClosest {
-						surfaceToLight := Subtract(light, result.Intersection).Normalized()
-						surfaceToCamera = surfaceToCamera.Normalized()
-						ambient := result.Color.ElementScale(shadowColorScale).Scale(ambientAmount)
-						diffuse := result.Color.Scale(LambertDiffuse(surfaceToLight, result.Normal))
-						specular := lightColor.Scale(Specular(surfaceToLight, result.Normal, surfaceToCamera, 8))
-						shaded := Add(Add(ambient, diffuse), specular)
-						img.Set(x, y, vecToNRGBA(shaded))
-						mindist = distance
-					}
-				}
+			if hit {
+				img.Set(x, y, vecToNRGBA(color))
 			}
 		}
 	}
