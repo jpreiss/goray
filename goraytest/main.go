@@ -5,6 +5,8 @@ import "image"
 import "image/png"
 import "image/color"
 import "os"
+import "math/rand"
+import "time"
 
 func vecToNRGBA(v goray.Vector) color.NRGBA {
 	return color.NRGBA {
@@ -17,7 +19,23 @@ func vecToNRGBA(v goray.Vector) color.NRGBA {
 
 func main() {
 
-	sphere := goray.NewSphere(goray.Vector{0.0, 0.0, 1.0}, 0.3)
+	numSpheres := 20
+
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	surfaces := make([]goray.Surface, numSpheres)
+
+	black := goray.Vector{0, 0, 0}
+	white := goray.Vector{1, 1, 1}
+
+	boxmin := goray.Vector{-1, -1, 0.5}
+	boxmax := goray.Vector{1, 1, 5.0}
+
+	for i := range surfaces {
+		randomPosition := goray.RandomVectorUniform(boxmin, boxmax)
+		randomColor := goray.RandomVectorUniform(black, white)
+		surfaces[i] = goray.NewSphere(randomPosition, 0.3, randomColor)
+	}
 
 	cam := goray.Camera {
 		goray.Vector{0, 0, 0},
@@ -27,7 +45,7 @@ func main() {
 		1.0,
 	}
 
-	light := goray.Vector{-1.0, 1.0, 0.0}
+	light := goray.Vector{-3.0, 1.0, 1.0}
 
 	// 640 * 480 image
 	view := goray.View {cam, 640, 480}
@@ -37,13 +55,24 @@ func main() {
 	// render
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+
 			ray := view.Ray(int16(x - 320), int16(-y + 240))
-			result := sphere.Trace(ray)
-			if result.Hit {
-				surfaceToLight := goray.Subtract(light, result.Intersection).Normalized()
-				diffuse := goray.LambertDiffuse(surfaceToLight, result.Normal)
-				shaded := result.Color.Scale(diffuse)
-				img.Set(x, y, vecToNRGBA(shaded))
+
+			mindist := -1.0
+
+			for _, surface := range surfaces {
+				result := surface.Trace(ray)
+				if result.Hit {
+					distance := goray.Subtract(result.Intersection, cam.Position).Length()
+					iAmClosest := (mindist == -1.0) || distance < mindist
+					if iAmClosest {
+						surfaceToLight := goray.Subtract(light, result.Intersection).Normalized()
+						diffuse := goray.LambertDiffuse(surfaceToLight, result.Normal)
+						shaded := result.Color.Scale(diffuse)
+						img.Set(x, y, vecToNRGBA(shaded))
+						mindist = distance
+					}
+				}
 			}
 		}
 	}

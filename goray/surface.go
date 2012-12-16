@@ -22,10 +22,11 @@ type Sphere struct {
 	Center        Vector
 	Radius        float64
 	RadiusSquared float64
+	Color         Vector    
 }
 
-func NewSphere(center Vector, radius float64) Sphere {
-	return Sphere{center, radius, radius * radius}
+func NewSphere(center Vector, radius float64, color Vector) Sphere {
+	return Sphere{center, radius, radius * radius, color}
 }
 
 func (s Sphere) Trace(r Ray) TraceResult {
@@ -39,7 +40,7 @@ func (s Sphere) Trace(r Ray) TraceResult {
 		stepBack := r.Direction.Scale(halfSecantLength)
 		result.Intersection = Subtract(secantMidpoint, stepBack)
 		result.Normal = Subtract(result.Intersection, s.Center).Normalized()
-		result.Color = Vector{0.8, 0.0, 0.2}
+		result.Color = s.Color
 	}
 	return result
 }

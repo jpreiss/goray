@@ -1,6 +1,7 @@
 package goray
 
 import "math"
+import "math/rand"
 
 // 3D vectors
 
@@ -54,4 +55,13 @@ func (a Vector) ProjectedOnto(b Vector) Vector {
 // b must be normalized
 func (a Vector) OrthogonalTo(b Vector) Vector {
 	return Subtract(a, a.ProjectedOnto(b))
+}
+
+func RandomVectorUniform(mins, maxes Vector) Vector {
+	delta := Subtract(maxes, mins)
+	return Vector{
+		mins.X + rand.Float64() * delta.X,
+		mins.Y + rand.Float64() * delta.Y,
+		mins.Z + rand.Float64() * delta.Z,
+	}
 }
