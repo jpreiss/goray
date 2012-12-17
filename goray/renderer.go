@@ -15,7 +15,27 @@ func vecToNRGBA(v Vector) color.NRGBA {
 	}
 }
 
-func RayTrace(surfaces []Surface, ray Ray, recursionDepth int) (bool, Vector) {
+func RayTrace(surfaces []Surface, ray Ray) (TraceResult) { 
+
+	mindist := math.MaxFloat32
+	closestResult := TraceResult{}
+	closestResult.Hit = false
+
+	for _, surface := range surfaces {
+		result := surface.Trace(ray)
+		if result.Hit {
+			surfaceToOrigin := Subtract(ray.Origin, result.Intersection)
+			distance := surfaceToOrigin.Length()
+			if distance < mindist {
+				mindist = distance
+				closestResult = result
+			}
+		}
+	}
+	return closestResult
+}
+
+func RayTraceRecursive(surfaces []Surface, ray Ray, recursionDepth int) (bool, Vector) { 
 
 	maxRecursion := 8
 
@@ -24,45 +44,43 @@ func RayTrace(surfaces []Surface, ray Ray, recursionDepth int) (bool, Vector) {
 	lightColor := Vector{1.0, 1.0, 1.0}
 
 	shadowColorScale := Vector{0.6, 0.7, 1.0}
-	ambientAmount := 0.3
+	ambientAmount := 0.4
 	reflectivity := 0.5
 
-	hit := false
-	mindist := math.MaxFloat32
-	color := Vector{}
+	black := Vector{0.0, 0.0, 0.0}
 
-	closestResult := TraceResult{}
-
-	for _, surface := range surfaces {
-		result := surface.Trace(ray)
-		if result.Hit {
-			hit = true
-			surfaceToOrigin := Subtract(ray.Origin, result.Intersection)
-			distance := surfaceToOrigin.Length()
-			if distance < mindist {
-				mindist = distance
-				closestResult = result
-				surfaceToLight := Subtract(light, result.Intersection).Normalized()
-				surfaceToOrigin = surfaceToOrigin.Normalized()
-				ambient := result.Color.ElementScale(shadowColorScale).Scale(ambientAmount)
-				diffuse := result.Color.Scale(LambertDiffuse(surfaceToLight, result.Normal))
-				specular := lightColor.Scale(Specular(surfaceToLight, result.Normal, surfaceToOrigin, 8))
-				color = Add(Add(ambient, diffuse), specular)
-			}
-		}
+	closestResult := RayTrace(surfaces, ray)
+	if !closestResult.Hit {
+		return false, black
 	}
 
-	if hit && (recursionDepth <= maxRecursion) {
+	ambient := closestResult.Color.ElementScale(shadowColorScale).Scale(ambientAmount)
+	myColor := ambient
+
+	surfaceToLight := Subtract(light, closestResult.Intersection).Normalized()
+	liftedIntersection := Add(closestResult.Intersection, closestResult.Normal.Scale(0.000001))
+	rayToLight := Ray{liftedIntersection, surfaceToLight}
+
+	shadowResult := RayTrace(surfaces, rayToLight)
+	if !shadowResult.Hit {
+		// not in shadow - use phong lighting
+		surfaceToOrigin := Subtract(ray.Origin, closestResult.Intersection).Normalized()
+		diffuse := closestResult.Color.Scale(LambertDiffuse(surfaceToLight, closestResult.Normal))
+		specular := lightColor.Scale(Specular(surfaceToLight, closestResult.Normal, surfaceToOrigin, 8))
+		myColor = Add(Add(ambient, diffuse), specular)
+	}
+
+	// reflections. they happen whether we are in shadow or not
+	if recursionDepth <= maxRecursion {
 		reflection := ray.Direction.Negate().Reflect(closestResult.Normal).Normalized()
-		liftedOrigin := Add(closestResult.Intersection, reflection.Scale(0.000001))
-		reflectedRay := Ray{liftedOrigin, reflection}
-		recursiveHit, recursiveColor := RayTrace(surfaces, reflectedRay, recursionDepth + 1)
+		reflectedRay := Ray{liftedIntersection, reflection}
+		recursiveHit, recursiveColor := RayTraceRecursive(surfaces, reflectedRay, recursionDepth + 1)
 		if recursiveHit {
-			color = Add(color, recursiveColor.Scale(reflectivity))
+			myColor = Add(myColor, recursiveColor.Scale(reflectivity))
 		} 
 	}
 
-	return hit, color
+	return true, myColor
 }
 
 
@@ -82,7 +100,7 @@ func Render(surfaces []Surface, camera Camera, width, height int) image.Image {
 			// compensate for image y direction
 			ray := view.Ray(x - halfwidth, -y + halfheight)
 
-			hit, color := RayTrace(surfaces, ray, 1)
+			hit, color := RayTraceRecursive(surfaces, ray, 1)
 
 			if hit {
 				img.Set(x, y, vecToNRGBA(color.Scale(0.7)))

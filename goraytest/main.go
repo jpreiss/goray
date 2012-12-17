@@ -9,7 +9,7 @@ import "time"
 
 func main() {
 
-	numSpheres := 15
+	numSpheres := 20
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -18,7 +18,7 @@ func main() {
 	black := goray.Vector{0, 0, 0}
 	white := goray.Vector{1, 1, 1}
 
-	boxmin := goray.Vector{-1.2, -1.2, 1.0}
+	boxmin := goray.Vector{-1.2, -1.2, 0.5}
 	boxmax := goray.Vector{1.2, 1.2, 10.0}
 
 	for i := range surfaces {
