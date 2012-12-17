@@ -2,6 +2,7 @@ package goray
 
 import "math"
 import "math/rand"
+import "fmt"
 
 // 3D vectors
 
@@ -17,6 +18,10 @@ func Add(a, b Vector) Vector {
 
 func Subtract(a, b Vector) Vector {
 	return Vector{a.X - b.X, a.Y - b.Y, a.Z - b.Z}
+}
+
+func (a Vector) Negate() Vector {
+	return Vector{-a.X, -a.Y, -a.Z}
 }
 
 func (a Vector) Scale(s float64) Vector {
@@ -57,6 +62,13 @@ func (a Vector) OrthogonalTo(b Vector) Vector {
 	return Subtract(a, a.ProjectedOnto(b))
 }
 
+// b must be normalized
+func (a Vector) Reflect(b Vector) Vector {
+	projected := a.ProjectedOnto(b)
+	diff := Subtract(a, projected)
+	return Subtract(projected, diff)
+}
+
 func RandomVectorUniform(mins, maxes Vector) Vector {
 	delta := Subtract(maxes, mins)
 	return Vector{
@@ -76,4 +88,8 @@ func VecMax(a, b Vector) Vector {
 
 func (a Vector) ElementScale (b Vector) Vector {
 	return Vector{a.X * b.X, a.Y * b.Y, a.Z * b.Z}
+}
+
+func (a Vector) String() string {
+	return fmt.Sprintf("(%6.2f, %6.2f, %6.2f)", a.X, a.Y, a.Z)
 }

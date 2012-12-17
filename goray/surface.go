@@ -47,19 +47,25 @@ func (s Sphere) Trace(r Ray) TraceResult {
 		return result
 	}
 
-	result.Hit = true
 	hitTime := 0.0
 
+	// todo: clean up conditionals...
 	if math.Abs(discriminant) < math.SmallestNonzeroFloat64 {
+		result.Hit = true
 		hitTime = -b / (2.0 * a)
 	} else {
 		sqrtDiscriminant := math.Sqrt(discriminant)
 		lowRoot := (-b - sqrtDiscriminant) / (2.0 * a)
 		highRoot := (-b + sqrtDiscriminant) / (2.0 * a)
 		if lowRoot > 0 {
+			result.Hit = true
 			hitTime = lowRoot
-		} else {
+		} else if highRoot > 0 {
+			result.Hit = true
 			hitTime = highRoot
+		} else {
+			result.Hit = false
+			return result
 		}
 	}
 
@@ -68,10 +74,3 @@ func (s Sphere) Trace(r Ray) TraceResult {
 	result.Color = s.Color
 	return result
 }
-
-
-
-
-
-		
-
